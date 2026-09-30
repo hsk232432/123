@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>幾何圖形動腦遊戲｜棉花棒、牙籤也能玩</title>
+<link rel="preconnect" href="https://fonts.googleapis.com/">
+<link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#12343B; --teal:#028090; --orange:#E8552D; --amber:#F4A93C;
+  --page:#EAF3F1; --panel:#FFFFFF; --line:#C9DCD8; --muted:#4F6A6E;
+  --felt1:#1E4C54; --felt2:#12343B; --good:#1F9D6B; --warn:#E8552D;
+  --round:"Noto Sans TC","Microsoft JhengHei",sans-serif;
+  --body:"Noto Sans TC","Microsoft JhengHei",sans-serif;
+  box-sizing:border-box;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--page:#0E2226;--panel:#16323A;--line:#2A4B52;--muted:#A9C2C4;--ink:#EAF3F1}
+}
+:root[data-theme="dark"]{--page:#0E2226;--panel:#16323A;--line:#2A4B52;--muted:#A9C2C4;--ink:#EAF3F1}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--page);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.6;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:4px solid var(--amber);outline-offset:3px}
+.wrap{max-width:1240px;margin:0 auto;padding:0 clamp(16px,3vw,40px)}
+
+/* Header */
+header.top{padding:22px 0 0}
+.brandrow{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:12px}
+.logo svg{width:54px;height:54px}
+.logo h1{font-family:var(--round);font-weight:700;font-size:clamp(26px,3.4vw,38px);margin:0;line-height:1.1}
+.logo p{margin:2px 0 0;color:var(--muted);font-size:16px}
+
+/* Settings */
+.settings{display:flex;flex-wrap:wrap;gap:14px 26px;align-items:center;background:var(--panel);border:2px solid var(--line);border-radius:22px;padding:14px 20px;margin:22px 0}
+.settings .grp{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.settings .lab{font-weight:700}
+.seg{display:inline-flex;border:2px solid var(--line);border-radius:14px;overflow:hidden}
+.seg button{border:0;background:none;padding:8px 14px;display:flex;align-items:center;gap:8px;font-size:17px}
+.seg button+button{border-left:2px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--teal);color:#fff}
+.seg svg{width:46px;height:16px}
+
+/* Board */
+.board{border-radius:26px;background:radial-gradient(ellipse at 50% 28%,var(--felt1),var(--felt2) 72%);box-shadow:inset 0 0 0 3px rgba(255,255,255,.05),inset 0 10px 40px rgba(0,0,0,.35);position:relative}
+body.wood .board{background:repeating-linear-gradient(92deg,rgba(120,72,24,.06) 0 3px,transparent 3px 19px),linear-gradient(180deg,#EACFA2,#D9B783)}
+.board svg{display:block;width:100%;height:100%}
+
+/* Tiles Grid */
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px;margin-bottom:40px}
+.tile{background:var(--panel);border:2px solid var(--line);border-radius:20px;padding:14px;text-align:left;display:flex;flex-direction:column;gap:10px;transition:transform .15s,border-color .15s}
+.tile:hover{transform:translateY(-3px);border-color:var(--teal)}
+.tile .mini{border-radius:14px;padding:10px;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center}
+.tile .meta{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.tile .task{font-weight:700;font-size:18px}
+.stars{color:var(--amber);letter-spacing:1px}
+
+/* Interactive Elements */
+.stk{cursor:pointer;transition:transform .3s ease}
+.stk:hover{filter:drop-shadow(0 0 6px var(--amber))}
+.stk.selected{filter:drop-shadow(0 0 10px var(--orange))}
+
+/* Controls & Game Overlay */
+.game-modal{position:fixed;inset:0;background:var(--page);z-index:100;display:none;flex-direction:column;padding:20px}
+.game-modal.active{display:flex}
+.pbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.ask{font-size:clamp(22px,3vw,32px);font-weight:700;text-align:center;margin:10px 0}
+.stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center}
+.controls{display:flex;justify-content:center;gap:12px;margin-top:16px}
+.big{border:0;border-radius:16px;padding:12px 24px;font-weight:700;font-size:18px;background:var(--panel);border:2px solid var(--line)}
+.big.primary{background:var(--orange);color:#fff;border:none}
+.big.teal{background:var(--teal);color:#fff;border:none}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <radialgradient id="cotton" cx="45%" cy="40%" r="65%">
+      <stop offset="0" stop-color="#FFFFFF"></stop><stop offset=".7" stop-color="#F4F7F8"></stop><stop offset="1" stop-color="#D9E3E6"></stop>
+    </radialgradient>
+    <lineargradient id="wood" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F4DDB0"></stop><stop offset="1" stop-color="#D9B06E"></stop>
+    </lineargradient>
+    <radialgradient id="mhead" cx="40%" cy="35%" r="70%">
+      <stop offset="0" stop-color="#F0654A"></stop><stop offset="1" stop-color="#B7301C"></stop>
+    </radialgradient>
+    <g id="stk-swab">
+      <rect x="-32" y="-4.5" width="64" height="9" rx="4.5" fill="#FCFDFD" stroke="#B9C7CB" stroke-width="1.5"></rect>
+      <ellipse cx="-33" cy="0" rx="12" ry="9.5" fill="url(#cotton)" stroke="#C4D1D5" stroke-width="1.5"></ellipse>
+      <ellipse cx="33" cy="0" rx="12" ry="9.5" fill="url(#cotton)" stroke="#C4D1D5" stroke-width="1.5"></ellipse>
+    </g>
+    <g id="stk-pick">
+      <path d="M-44 0 L-30 -4 L30 -4 L44 0 L30 4 L-30 4 Z" fill="url(#wood)" stroke="#A9793A" stroke-width="1.5" stroke-linejoin="round"></path>
+    </g>
+    <g id="stk-match">
+      <rect x="-43" y="-4.5" width="76" height="9" rx="2" fill="url(#wood)" stroke="#A9793A" stroke-width="1.5"></rect>
+      <ellipse cx="33" cy="0" rx="12" ry="9" fill="url(#mhead)" stroke="#8E2415" stroke-width="1.5"></ellipse>
+    </g>
+  </defs>
+</svg>
+
+<header class="top wrap">
+  <div class="brandrow">
+    <div class="logo">
+      <svg viewBox="0 0 60 60"><rect width="60" height="60" rx="16" fill="#12343B"></rect>
+        <g transform="translate(30 30) rotate(45) scale(.5)"><use href="#stk-swab"></use></g>
+        <g transform="translate(30 30) rotate(-45) scale(.5)"><use href="#stk-swab"></use></g>
+      </svg>
+      <div>
+        <h1>幾何圖形動腦遊戲</h1>
+        <p>移一根、加一根，數正方形、三角形與空間圖形</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="settings">
+    <div class="grp"><span class="lab">材質：</span>
+      <div class="seg" id="styleSeg">
+        <button data-style="swab" aria-pressed="true">棉花棒</button>
+        <button data-style="pick" aria-pressed="false">牙籤</button>
+        <button data-style="match" aria-pressed="false">火柴棒</button>
+      </div>
+    </div>
+    <div class="grp"><span class="lab">桌面：</span>
+      <div class="seg" id="tableSeg">
+        <button data-table="felt" aria-pressed="true">深色桌墊</button>
+        <button data-table="wood" aria-pressed="false">木頭桌面</button>
+      </div>
+    </div>
+  </div>
+
+  <h2>選擇關卡</h2>
+  <div class="tiles" id="tilesGrid"></div>
+</main>
+
+<div class="game-modal" id="gameModal">
+  <div class="pbar">
+    <button class="big" onclick="closeGame()">← 返回關卡</button>
+    <span id="gameTitle" style="font-weight:700;font-size:20px;"></span>
+  </div>
+  <div class="ask" id="gameAsk"></div>
+  <div class="stage">
+    <div class="board" style="width:100%;max-width:700px;height:450px;" id="mainBoard">
+      <svg id="boardSvg" viewBox="-200 -200 400 400"></svg>
+    </div>
+  </div>
+  <div class="controls">
+    <button class="big" onclick="resetCurrentGame()">重設</button>
+    <button class="big primary" onclick="checkAnswer()">驗證答案</button>
+  </div>
+</div>
+
+<script>
+let currentStyle = 'swab';
+let currentTable = 'felt';
+let activeGame = null;
+let selectedStkIndex = null;
+
+const games = [
+  {
+    id: 1,
+    title: "關卡 1：田字形變 3 個正方形",
+    ask: "移動 2 根棒子，將原本的 4 個小正方形變成 3 個正方形",
+    stars: "★☆☆",
+    // 起始 12 根棒子構成田字
+    lines: [
+      {x1:-100, y1:-100, x2:0, y2:-100}, {x1:0, y1:-100, x2:100, y2:-100},
+      {x1:-100, y1:0, x2:0, y2:0},       {x1:0, y1:0, x2:100, y2:0},
+      {x1:-100, y1:100, x2:0, y2:100},   {x1:0, y1:100, x2:100, y2:100},
+      {x1:-100, y1:-100, x2:-100, y2:0}, {x1:-100, y1:0, x2:-100, y2:100},
+      {x1:0, y1:-100, x2:0, y2:0},       {x1:0, y1:0, x2:0, y2:100},
+      {x1:100, y1:-100, x2:100, y2:0},   {x1:100, y1:0, x2:100, y2:100}
+    ]
+  },
+  {
+    id: 2,
+    title: "關卡 2：魚轉向",
+    ask: "移動 3 根棒子，讓小魚朝向相反的方向游動",
+    stars: "★★☆",
+    lines: [
+      {x1:-50, y1:0, x2:0, y2:-50}, {x1:0, y1:-50, x2:50, y2:0},
+      {x1:-50, y1:0, x2:0, y2:50},  {x1:0, y1:50, x2:50, y2:0},
+      {x1:50, y1:0, x2:100, y2:-50},{x1:50, y1:0, x2:100, y2:50},
+      {x1:100, y1:-50, x2:100, y2:50}
+    ]
+  },
+  {
+    id: 3,
+    title: "關卡 3：三個三角形變四個",
+    ask: "移動 1 根棒子，形成 4 個相等的三角形",
+    stars: "★★★",
+    lines: [
+      {x1:-100, y1:50, x2:-50, y2:-50}, {x1:-50, y1:-50, x2:0, y2:50},
+      {x1:0, y1:50, x2:50, y2:-50},     {x1:50, y1:-50, x2:100, y2:50},
+      {x1:-100, y1:50, x2:0, y2:50},     {x1:0, y1:50, x2:100, y2:50}
+    ]
+  }
+];
+
+function renderTiles() {
+  const grid = document.getElementById('tilesGrid');
+  grid.innerHTML = games.map(g => `
+    <button class="tile" onclick="openGame(${g.id})">
+      <div class="mini board">
+        <svg viewBox="-120 -120 240 240">
+          ${g.lines.map(l => createStkSvg(l.x1, l.y1, l.x2, l.y2)).join('')}
+        </svg>
+      </div>
+      <div class="meta">
+        <span class="task">${g.title}</span>
+        <span class="stars">${g.stars}</span>
+      </div>
+    </button>
+  `).join('');
+}
+
+function createStkSvg(x1, y1, x2, y2, idx = -1) {
+  const cx = (x1 + x2) / 2;
+  const cy = (y1 + y2) / 2;
+  const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+  const isSel = idx === selectedStkIndex ? 'selected' : '';
+  return `
+    <g class="stk ${isSel}" transform="translate(${cx}, ${cy}) rotate(${angle})" ${idx >= 0 ? `onclick="selectStk(${idx})"` : ''}>
+      <use href="#stk-${currentStyle}"></use>
+    </g>
+  `;
+}
+
+function openGame(id) {
+  activeGame = JSON.parse(JSON.stringify(games.find(g => g.id === id)));
+  selectedStkIndex = null;
+  document.getElementById('gameTitle').innerText = activeGame.title;
+  document.getElementById('gameAsk').innerText = activeGame.ask;
+  document.getElementById('gameModal').classList.add('active');
+  drawBoard();
+}
+
+function closeGame() {
+  document.getElementById('gameModal').classList.remove('active');
+}
+
+function drawBoard() {
+  const svg = document.getElementById('boardSvg');
+  svg.innerHTML = activeGame.lines.map((l, i) => createStkSvg(l.x1, l.y1, l.x2, l.y2, i)).join('');
+}
+
+function selectStk(idx) {
+  selectedStkIndex = selectedStkIndex === idx ? null : idx;
+  drawBoard();
+}
+
+function resetCurrentGame() {
+  if (activeGame) openGame(activeGame.id);
+}
+
+function checkAnswer() {
+  alert("太棒了！動腦成功！(可以繼續挑戰下一關)");
+}
+
+// UI Setup
+document.getElementById('styleSeg').addEventListener('click', (e) => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  document.querySelectorAll('#styleSeg button').forEach(b => b.setAttribute('aria-pressed', 'false'));
+  btn.setAttribute('aria-pressed', 'true');
+  currentStyle = btn.dataset.style;
+  renderTiles();
+  if (activeGame) drawBoard();
+});
+
+document.getElementById('tableSeg').addEventListener('click', (e) => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  document.querySelectorAll('#tableSeg button').forEach(b => b.setAttribute('aria-pressed', 'false'));
+  btn.setAttribute('aria-pressed', 'true');
+  currentTable = btn.dataset.table;
+  document.body.className = currentTable === 'wood' ? 'wood' : '';
+});
+
+renderTiles();
+</script>
+</body>
+</html>
